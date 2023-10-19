@@ -32,7 +32,6 @@ class MediaEncryptServiceProvider extends \Illuminate\Support\ServiceProvider
             if (Str::startsWith($key = $config['key'] ?? '', $prefix = 'base64:')) {
                 $key = base64_decode(Str::after($key, $prefix));
             }
-            $key = Encrypter::generateKey('AES-256-CBC');
 
             $encrypt = null;
             if ($key && $cipher = ($config['cipher'] ?? null)) {

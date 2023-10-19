@@ -10,12 +10,15 @@ namespace HXM\MediaEncrypt\Models;
 
 use HXM\MediaEncrypt\Contracts\MediaEncryptInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Str;
+use HXM\MediaEncrypt\Facades\MediaEncryptFacade;
 
 class MediaEncrypt extends Model implements MediaEncryptInterface
 {
     public $timestamps = false;
-    protected $fillable = ['field', 'file_name', 'mime_type', 'ext', 'size'];
+    protected $fillable = ['field','rows', 'file_name', 'mime_type', 'ext', 'size'];
     protected $with = ['contents'];
     protected $keyType = 'string';
     public $incrementing = false;
@@ -28,7 +31,7 @@ class MediaEncrypt extends Model implements MediaEncryptInterface
      * @param $data
      * @return $this
      */
-    function setOriginContent($data)
+    function setOriginContent($data): MediaEncrypt
     {
         $this->originContent = $data;
         return $this;
@@ -49,16 +52,20 @@ class MediaEncrypt extends Model implements MediaEncryptInterface
 
     /**
      * @param $needContent
-     * @return $this
+     * @return MediaEncryptInterface
      */
-    public function setNeedContent($needContent): self
+    public function setNeedContent($needContent): MediaEncryptInterface
     {
         $this->needContent = $needContent;
         return $this;
     }
-    function able()
+    function able(): MorphTo
     {
         return $this->morphTo();
+    }
+    public function toArray()
+    {
+        return $this->decrypt();
     }
 
     /**
@@ -71,21 +78,23 @@ class MediaEncrypt extends Model implements MediaEncryptInterface
         }
         if ($decryptString = $this->getRelationValue('contents')->implode('data')) {
             try {
-                $originContent = app('media_encrypt_tool')->getEncrypt()->decrypt($decryptString);
+                $originContent = MediaEncryptFacade::getEncrypt()->decrypt($decryptString);
             } catch (\Exception $e) {
                 $originContent =  null;
             }
-            if ($originContent && $this->getRawOriginal('file_name') && $mime_type = $this->getRawOriginal('mime_type')) {
-                $originContent = "data:{$mime_type};base64,".$originContent;
+            if ($originContent && $mime_type = $this->getRawOriginal('mime_type')) {
+               
+                Str::startsWith($originContent, 'base64') || $originContent = "base64,".$originContent;
+                $originContent = "data:{$mime_type};".$originContent;
             }
             $this->setOriginContent($originContent);
             return $originContent;
         }
         return null;
     }
-    function contents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    function contents(): HasMany
     {
-        return $this->hasMany(MediaEncryptContent::class)->orderBy('part');
+        return $this->hasMany(config('media_encrypt.model_content'))->orderBy('part');
     }
 
     static function booting()
@@ -96,7 +105,7 @@ class MediaEncrypt extends Model implements MediaEncryptInterface
             if ($model->getNeedContent() == $model->getOriginContent()) {
                 return false;
             }
-            app('media_encrypt_tool')->encryptContentBeforeSave($model);
+            MediaEncryptFacade::encryptContentBeforeSave($model);
             if (!$model->encryptedRows) {
                 $model->exists && $model->delete();
                 return false;
@@ -107,14 +116,11 @@ class MediaEncrypt extends Model implements MediaEncryptInterface
         });
 
         static::saved(function(self $model) {
-            app('media_encrypt_tool')->saveDataAfterSaved($model);
+            MediaEncryptFacade::saveDataAfterSaved($model);
         });
 
         static::deleted(function(self $model) {
             $model->contents()->delete();
         });
     }
-
-
-
 }

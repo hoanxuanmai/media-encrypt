@@ -12,6 +12,7 @@ use HXM\MediaEncrypt\Contracts\MediaEncryptInterface as MediaEncrypt;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class MediaEncryptTool
 {
@@ -59,7 +60,7 @@ class MediaEncryptTool
             ];
             $content = base64_encode($content->getContent());
         }
-        $model->fill($dataSave);
+
         if ($content !== '' && $content !== null) {
             $stringSave = $this->getEncrypt()->encrypt($content);
             $rows = str_split($stringSave, $this->rowLength);
@@ -67,18 +68,26 @@ class MediaEncryptTool
         } else {
             $model->encryptedRows = [];
         }
+        $dataSave['rows'] = count($model->encryptedRows);
+        $model->fill($dataSave);
     }
 
     function saveDataAfterSaved(MediaEncrypt &$model)
     {
         if ($model->encryptedRows) {
             $model->wasRecentlyCreated || $model->contents()->delete();
-            foreach ($model->encryptedRows as $part => $row) {
-                $model->contents()->create([
-                    'part' => $part,
-                    'data' => $row
-                ]);
-            }
+            $model->contents()->insert(
+                collect($model->encryptedRows)->mapWithKeys(function($data, $key) use($model){
+                    return [
+                        $key => [
+                            'id' => Str::orderedUuid(),
+                            'media_encrypt_id' => $model->getKey(),
+                            'part' => $key,
+                            'data' => $data
+                        ]
+                    ];
+                })->toArray()
+            );
         }
     }
 

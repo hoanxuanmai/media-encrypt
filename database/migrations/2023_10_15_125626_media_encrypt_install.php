@@ -22,6 +22,7 @@ class MediaEncryptInstall extends Migration
             $table->uuid('id')->primary();
             $table->morphs('able');
             $table->string('field')->nullable();
+            $table->unsignedInteger('rows')->default(1);
             $table->string('file_name')->nullable();
             $table->string('mime_type')->nullable();
             $table->string('ext')->nullable();

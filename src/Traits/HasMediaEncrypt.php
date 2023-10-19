@@ -10,6 +10,7 @@ namespace HXM\MediaEncrypt\Traits;
 use HXM\MediaEncrypt\Casts\MediaEncryptCast;
 use HXM\MediaEncrypt\Contracts\CanMediaEncryptInterface;
 use HXM\MediaEncrypt\Contracts\MediaEncryptInterface;
+use HXM\MediaEncrypt\Facades\MediaEncryptFacade;
 use HXM\MediaEncrypt\Models\MediaEncrypt;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -155,7 +156,7 @@ trait HasMediaEncrypt
      */
     function media_encrypts(): MorphMany
     {
-        return $this->morphMany(config('media_encrypt.model'), 'able');
+        return $this->morphMany(MediaEncryptFacade::getModelClass(), 'able');
     }
 
 
