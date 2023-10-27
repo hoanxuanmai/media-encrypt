@@ -7,8 +7,11 @@
 
 return [
     'key' => env('APP_KEY'),
+
     'cipher' => 'AES-256-CBC',
+
     'model' => \HXM\MediaEncrypt\Models\MediaEncrypt::class,
+
     'model_content' => \HXM\MediaEncrypt\Models\MediaEncryptContent::class,
     /*
      * the length of row data
@@ -18,5 +21,14 @@ return [
      * TINYTEXT: 255
      * */
     'row_length' => 4e9,
+
+    /**
+     * eager load data
+     */
+    'allow_eager_loading' => true,
+
+    /**
+     * allow append data into serialize
+     */
     'allow_append' => true
 ];

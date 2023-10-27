@@ -20,13 +20,15 @@ class MediaEncryptInstall extends Migration
     {
         Schema::create('media_encrypts', function(Blueprint $table){
             $table->uuid('id')->primary();
-            $table->morphs('able');
+            $table->uuidMorphs('able');
             $table->string('field')->nullable();
+            $table->string('index', 50)->nullable();
             $table->unsignedInteger('rows')->default(1);
             $table->string('file_name')->nullable();
             $table->string('mime_type')->nullable();
             $table->string('ext')->nullable();
             $table->unsignedBigInteger('size')->nullable();
+            $table->unique(['able_type', 'able_id', 'field', 'index']);
         });
 
         Schema::create('media_encrypt_contents', function(Blueprint $table){

@@ -8,11 +8,15 @@
 namespace HXM\MediaEncrypt\Traits;
 
 use HXM\MediaEncrypt\Casts\MediaEncryptCast;
+use HXM\MediaEncrypt\Casts\MultiMediaEncryptCast;
 use HXM\MediaEncrypt\Contracts\CanMediaEncryptInterface;
 use HXM\MediaEncrypt\Contracts\MediaEncryptInterface;
 use HXM\MediaEncrypt\Facades\MediaEncryptFacade;
 use HXM\MediaEncrypt\Models\MediaEncrypt;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 trait HasMediaEncrypt
 {
@@ -27,7 +31,14 @@ trait HasMediaEncrypt
      */
     protected $encryptedAttributes = [];
 
+    /**
+     * @var array
+     */
     protected $mediaEncryptFields = [];
+    /**
+     * @var array
+     */
+    protected $mediaEncryptFieldsTypeMulti = [];
 
     /**
      * run boot Model
@@ -37,15 +48,31 @@ trait HasMediaEncrypt
     {
         static::saved(function(CanMediaEncryptInterface $model){
             $mediaAttributes = $model->getMediaEncryptFields();
-            foreach ($model->getNeedEncryptAttributes() as $field => $value) {
+            $dataSave = [];
+            foreach ($model->getNeedEncrypts() as $field => $instance) {
                 if (in_array($field, $mediaAttributes)) {
-                    $instance = $model->getEncryptedAttribute($field);
-                    /** @var MediaEncrypt $instance */
-                    $instance || $instance = $model->media_encrypts()->make([
-                       'field' => $field
-                    ]);
-                    $instance->setNeedContent($value)->save();
-                    $model = $model->setEncryptedAttribute($instance);
+                    if ($instance instanceof Collection) {
+                        $instance->map(function($dt) {
+                            return $dt->save();
+                        });
+                        $keys = $instance->keys();
+
+                        $encrypted = $model->getEncryptedByField($field);
+
+                        if ($encrypted) {
+                            $remove = $encrypted->map(function($dt) use($keys) {
+                                return $keys->contains($dt->index) ? null : $dt->index;
+                            })->filter(function($dt){ return (!is_null($dt) || trim($dt) !== ''); });
+
+                            $remove->count() && $model->media_encrypts()
+                                ->whereIn('index', $remove->toArray())
+                                ->delete();
+                        }
+
+                    } else {
+                        $instance->save();
+                    }
+                    $model->setEncrypted($field, $instance);
                 }
             }
         });
@@ -61,8 +88,9 @@ trait HasMediaEncrypt
         $this->with = array_unique(array_merge($this->with, ['media_encrypts']));
         $fillAble = $this->getFillable();
         foreach ($this->getCasts() as $field => $cast) {
-            if (! in_array($field, $fillAble) && $cast === MediaEncryptCast::class) {
+            if (! in_array($field, $fillAble) && in_array($cast, [MediaEncryptCast::class, MultiMediaEncryptCast::class])) {
                 $this->mediaEncryptFields[] = $field;
+                $cast === MultiMediaEncryptCast::class && $this->mediaEncryptFieldsTypeMulti[] = $field;
                 $this->makeHidden($field);
             }
         }
@@ -77,9 +105,14 @@ trait HasMediaEncrypt
      */
     public function setRelation($relation, $value)
     {
-        if ($relation === 'media_encrypts') {
-            foreach ($value as $encrypted) {
-                $this->setEncryptedAttribute($encrypted);
+        if ($relation === 'media_encrypts' && $value->count()) {
+            foreach ($value->groupBy('field') as $field => $encrypted) {
+                $this->setEncrypted(
+                    $field,
+                    $this->isMultiMediaEncryptField($field)
+                        ? $encrypted->mapWithKeys(function($dt){ return [$dt->index => $dt]; })
+                        : $encrypted->first()
+                );
             }
         }
         return parent::setRelation($relation, $value);
@@ -95,21 +128,31 @@ trait HasMediaEncrypt
 
     /**
      * @param $field
-     * @param MediaEncrypt $mediaEncrypt
+     * @return bool
+     */
+    function isMultiMediaEncryptField($field): bool
+    {
+        return in_array($field, $this->mediaEncryptFieldsTypeMulti);
+    }
+
+    /**
+     * @param MediaEncrypt|MediaEncrypt[] $mediaEncrypted
      * @return CanMediaEncryptInterface
      */
-    public function setEncryptedAttribute(MediaEncryptInterface $mediaEncrypt): CanMediaEncryptInterface
+    public function setEncrypted($field, $mediaEncrypted): CanMediaEncryptInterface
     {
-        $this->encryptedAttributes[$mediaEncrypt->field] = $mediaEncrypt;
+        $this->encryptedAttributes[$field] = $mediaEncrypted;
         return $this;
     }
 
     /**
+     * get data encrypted by field
      * @param $field
-     * @return MediaEncrypt|null
+     * @return MediaEncrypt|MediaEncrypt[]|null
      */
-    public function getEncryptedAttribute($field): ?MediaEncryptInterface
+    public function getEncryptedByField($field)
     {
+        $this->relationLoaded('media_encrypts') || $this->load('media_encrypts');
         return $this->encryptedAttributes[$field] ?? null;
     }
 
@@ -117,36 +160,39 @@ trait HasMediaEncrypt
      * @param $field
      * @return bool
      */
-    public function hasNeedEncryptAttribute($field): bool
+    public function hasNeedEncrypt($field): bool
     {
         return  isset($this->needEncryptAttributes[$field]);
     }
     /**
+     * get need data to encrypt by field
      * @param $field
      * @return mixed|null
      */
-    public function getNeedEncryptAttribute($field)
+    public function getNeedEncryptByField($field)
     {
         return $this->needEncryptAttributes[$field] ?? null;
     }
 
 
     /**
+     * get all need data
      * @return array
      */
-    public function getNeedEncryptAttributes(): array
+    public function getNeedEncrypts(): array
     {
         return $this->needEncryptAttributes;
     }
 
     /**
+     * set data need encrypt into field
      * @param $key
      * @param $value
      * @return CanMediaEncryptInterface
      */
-    public function setNeedEncryptAttribute($key, $value): CanMediaEncryptInterface
+    public function setNeedEncrypt($field, $value): CanMediaEncryptInterface
     {
-        $this->needEncryptAttributes[$key] = $value;
+        $this->needEncryptAttributes[$field] = $value;
         return $this;
     }
 
@@ -183,7 +229,7 @@ trait HasMediaEncrypt
     function toArray()
     {
         $result = parent::toArray();
-        if (config('media_encrypt.allow_append')) {
+        if (MediaEncryptFacade::allowAppend()) {
             foreach ($this->getMediaEncryptFields() as $field) {
                 if (!isset($result[$field]) && $this->hasAppended($field)) {
                     $result[$field] = $this->{$field};

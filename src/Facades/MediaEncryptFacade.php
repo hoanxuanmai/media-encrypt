@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static Encrypter getEncrypt()
- * @method static void encryptContentBeforeSave(\HXM\MediaEncrypt\Models\MediaEncrypt &$mediaEncrypt)
- * @method static void saveDataAfterSaved(\HXM\MediaEncrypt\Contracts\MediaEncryptInterface &$model)
  * @method static mixed decryptData(CanMediaEncryptInterface &$model, $field)
  *
  * @see MediaEncryptTool
@@ -35,5 +33,20 @@ class MediaEncryptFacade extends Facade
     static function getModelContentClass(): string
     {
         return config('media_encrypt.model_content');
+    }
+
+    static function getRowLength(): int
+    {
+        return (int) config('media_encrypt.row_length', 4e9);
+    }
+
+    static function allowEagerLoading(): bool
+    {
+        return (bool) config('media_encrypt.allow_eager_loading', true);
+    }
+
+    static function allowAppend(): bool
+    {
+        return (bool) config('media_encrypt.allow_append', false);
     }
 }

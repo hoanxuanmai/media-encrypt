@@ -6,6 +6,7 @@
  */
 namespace HXM\MediaEncrypt;
 
+use HXM\MediaEncrypt\Facades\MediaEncryptFacade;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Str;
 
@@ -38,7 +39,7 @@ class MediaEncryptServiceProvider extends \Illuminate\Support\ServiceProvider
                 $encrypt = new Encrypter($key, $cipher);
             }
 
-            return new MediaEncryptTool($config['row_length'] ?? 4e9, $encrypt);
+            return new MediaEncryptTool($encrypt);
         });
     }
 }

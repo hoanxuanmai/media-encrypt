@@ -12,49 +12,86 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 interface CanMediaEncryptInterface
 {
+    /**
+     * run init Model
+     * @return void
+     */
+    function initializeHasMediaEncrypt();
 
     /**
-     * get list Media Encrypt fields
+     * Set the given relationship on the model.
+     *
+     * @param string $relation
+     * @param mixed $value
+     * @return CanMediaEncryptInterface
+     */
+    public function setRelation($relation, $value);
+
+    /**
      * @return array
      */
-    function getMediaEncryptFields(): array;
-
-    /**
-     * get List Attributes need to save
-     * @return array
-     */
-    public function getNeedEncryptAttributes(): array;
-
-    /**
-     * set content need to encrypt
-     * @param $key
-     * @param $value
-     * @return self
-     */
-    public function setNeedEncryptAttribute($key, $value): self;
-
-    /**
-     * add field to list encrypted
-     * @param MediaEncrypt $model
-     * @return self
-     */
-    public function setEncryptedAttribute(MediaEncrypt $model): self;
-
-    /**
-     * get Instance MediaEncrypt of field
-     * @param $field
-     * @return MediaEncrypt|null
-     */
-    public function getEncryptedAttribute($field): ?MediaEncrypt;
+    public function getMediaEncryptFields(): array;
 
     /**
      * @param $field
      * @return bool
      */
-    public function hasNeedEncryptAttribute($field): bool;
+    function isMultiMediaEncryptField($field): bool;
+
+    /**
+     * @param MediaEncrypt|MediaEncrypt[] $mediaEncrypted
+     * @return CanMediaEncryptInterface
+     */
+    public function setEncrypted($field, $mediaEncrypted): CanMediaEncryptInterface;
+
+    /**
+     * get data encrypted by field
+     * @param $field
+     * @return MediaEncrypt|MediaEncrypt[]|null
+     */
+    public function getEncryptedByField($field);
+
+    /**
+     * @param $field
+     * @return bool
+     */
+    public function hasNeedEncrypt($field): bool;
+
+    /**
+     * get need data to encrypt by field
+     * @param $field
+     * @return mixed|null
+     */
+    public function getNeedEncryptByField($field);
+
+    /**
+     * get all need data
+     * @return array
+     */
+    public function getNeedEncrypts(): array;
+
+    /**
+     * set data need encrypt into field
+     * @param $key
+     * @param $value
+     * @return \HXM\MediaEncrypt\Contracts\CanMediaEncryptInterface
+     */
+    public function setNeedEncrypt($field, $value): CanMediaEncryptInterface;
 
     /**
      * @return MorphMany
      */
     function media_encrypts(): MorphMany;
+
+    /**
+     * @return array
+     */
+    function getAttributes();
+
+    public function getFillable();
+
+    /**
+     * @return array
+     */
+    function toArray();
 }
