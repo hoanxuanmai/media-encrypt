@@ -6,7 +6,6 @@
  */
 namespace HXM\MediaEncrypt;
 
-use HXM\MediaEncrypt\Facades\MediaEncryptFacade;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Str;
 
@@ -20,8 +19,10 @@ class MediaEncryptServiceProvider extends \Illuminate\Support\ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../database/migrations/2023_10_15_125626_media_encrypt_install.php',
+            ], 'media-encrypt-migrarte');
+            $this->publishes([
                 __DIR__.'/../config/media_encrypt.php',
-            ], 'media_encrypt');
+            ], 'media-encrypt-config');
         }
 
     }
