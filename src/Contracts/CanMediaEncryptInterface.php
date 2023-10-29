@@ -74,7 +74,7 @@ interface CanMediaEncryptInterface
      * set data need encrypt into field
      * @param $key
      * @param $value
-     * @return \HXM\MediaEncrypt\Contracts\CanMediaEncryptInterface
+     * @return CanMediaEncryptInterface
      */
     public function setNeedEncrypt($field, $value): CanMediaEncryptInterface;
 
