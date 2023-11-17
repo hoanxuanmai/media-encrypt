@@ -6,7 +6,9 @@
  */
 namespace HXM\MediaEncrypt;
 
+use HXM\MediaEncrypt\Controller\MediaEncryptLinkController;
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class MediaEncryptServiceProvider extends \Illuminate\Support\ServiceProvider
@@ -42,5 +44,9 @@ class MediaEncryptServiceProvider extends \Illuminate\Support\ServiceProvider
 
             return new MediaEncryptTool($encrypt);
         });
+        Route::middleware(['web'])
+            ->prefix(config('media_encrypt.url_prefix'))
+            ->name('media_encript.link')
+            ->get('{mediaEncrypt}', MediaEncryptLinkController::class);
     }
 }

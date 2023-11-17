@@ -14,7 +14,6 @@ use HXM\MediaEncrypt\Contracts\MediaEncryptInterface;
 use HXM\MediaEncrypt\Facades\MediaEncryptFacade;
 use HXM\MediaEncrypt\Models\MediaEncrypt;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -49,13 +48,11 @@ trait HasMediaEncrypt
     {
         static::saved(function(CanMediaEncryptInterface $model){
             $mediaAttributes = $model->getMediaEncryptFields();
-            /** @var Model $model */
-            $ableId = $model->getKey();
+            $dataSave = [];
             foreach ($model->getNeedEncrypts() as $field => $instance) {
                 if (in_array($field, $mediaAttributes)) {
                     if ($instance instanceof Collection) {
-                        $instance->map(function($dt) use ($ableId) {
-                            $dt->able_id = $ableId;
+                        $instance->map(function($dt) {
                             return $dt->save();
                         });
                         $keys = $instance->keys();
@@ -73,8 +70,6 @@ trait HasMediaEncrypt
                         }
 
                     } else {
-
-                        $instance->able_id = $ableId;
                         $instance->save();
                     }
                     $model->setEncrypted($field, $instance);
@@ -216,11 +211,11 @@ trait HasMediaEncrypt
      */
     function getAttributes()
     {
+        parent::getAttributes();
         foreach ($this->getMediaEncryptFields() as $field) {
-            unset($this->classCastCache[$field]);
             unset($this->attributes[$field]);
         }
-        return parent::getAttributes();
+        return $this->attributes;
     }
 
     public function getFillable()
@@ -237,7 +232,7 @@ trait HasMediaEncrypt
         if (MediaEncryptFacade::allowAppend()) {
             foreach ($this->getMediaEncryptFields() as $field) {
                 if (!isset($result[$field]) && $this->hasAppended($field)) {
-                    $result[$field] = $this->{$field};
+                    $result[$field] = MediaEncryptFacade::decryptData($this, $field);
                 }
             }
         }

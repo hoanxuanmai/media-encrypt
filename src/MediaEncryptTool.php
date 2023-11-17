@@ -40,11 +40,11 @@ class MediaEncryptTool
 
 
     /**
-     * @param CanMediaEncryptInterface|Model $model
-     * @param $field
-     * @return mixed|string|null
+     * @param $model
+     * @param string $field
+     * @return array|mixed|null
      */
-    function decryptData(&$model, $field, $isMulti = false)
+    function decryptData(&$model, string $field)
     {
         $row = null;
         if ($model->hasNeedEncrypt($field)) {
@@ -57,7 +57,9 @@ class MediaEncryptTool
 
         if ($row) {
             return ($row instanceof Collection)
-                ? $row->toArray()
+                ? $row->map(function($dt) {
+                    return $dt->decrypt();
+                })->toArray()
                 : $row->decrypt();
         }
         return null;

@@ -22,7 +22,8 @@ class MultiMediaEncryptCast implements CastsAttributes
      */
     public function get($model, $key, $value, $attributes)
     {
-        return MediaEncryptFacade::decryptData($model, $key);
+        return $model->getNeedEncryptByField($key) ?? $model->getEncryptedByField($key);
+//        return MediaEncryptFacade::decryptData($model, $key);
     }
 
     /**
@@ -45,7 +46,9 @@ class MultiMediaEncryptCast implements CastsAttributes
                 'index' => $index,
                 'field' => $key
             ]);
-            $instance->setNeedContent($row);
+            if (!$row instanceof MediaEncrypt){
+                $instance->setNeedContent($row);
+            }
             return [$index => $instance];
         });
 

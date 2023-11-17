@@ -71,7 +71,7 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
 
     public function toArray()
     {
-        return $this->decrypt();
+        return $this->getRawOriginal('mime_type') ? $this->toUrl() : $this->decrypt();
     }
 
     /**
@@ -88,15 +88,15 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
             } catch (\Exception $e) {
                 $originContent =  null;
             }
-            if ($originContent && $mime_type = $this->getRawOriginal('mime_type')) {
-
-                Str::startsWith($originContent, 'base64') || $originContent = "base64,".$originContent;
-                $originContent = "data:{$mime_type};".$originContent;
-            }
             $this->setOriginContent($originContent);
             return $originContent;
         }
         return null;
+    }
+
+    function toUrl()
+    {
+        return route('media_encript.link', $this);
     }
 
     function contents(): HasMany

@@ -21,7 +21,8 @@ class MediaEncryptCast implements CastsAttributes
      */
     public function get($model, $key, $value, $attributes)
     {
-        return MediaEncryptFacade::decryptData($model, $key);
+        return $model->getNeedEncryptByField($key) ?? $model->getEncryptedByField($key);
+//        return MediaEncryptFacade::decryptData($model, $key);
     }
 
     /**
@@ -35,6 +36,11 @@ class MediaEncryptCast implements CastsAttributes
      */
     public function set($model, $key, $value, $attributes)
     {
+        if ($value instanceof MediaEncrypt) {
+            $model->setEncrypted($key, $value);
+            return null;
+        }
+
         /** @var MediaEncrypt $instance */
         $instance = $model->getEncryptedByField($key);
         $instance || $instance = $model->media_encrypts()->make([

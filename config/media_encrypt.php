@@ -30,5 +30,7 @@ return [
     /**
      * allow append data into serialize
      */
-    'allow_append' => true
+    'allow_append' => true,
+    /** prefix of URL */
+    'url_prefix' => 'encrypt_media'
 ];
