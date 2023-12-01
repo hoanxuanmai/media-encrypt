@@ -88,7 +88,8 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
             } catch (\Exception $e) {
                 $originContent =  null;
             }
-            $this->setOriginContent($originContent);
+            $this->originContent = $originContent;
+            $this->needContent = $originContent;
             return $originContent;
         }
         return null;
