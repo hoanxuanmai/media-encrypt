@@ -194,7 +194,7 @@ trait HasMediaEncrypt
     public function getEncryptedByField($field)
     {
         $this->relationLoaded('media_encrypts') || $this->load('media_encrypts');
-        return clone ($this->encryptedAttributes[$field] ?? null);
+        return isset($this->encryptedAttributes[$field]) ? clone $this->encryptedAttributes[$field] : null;
     }
 
     /**
