@@ -29,16 +29,17 @@ class MediaEncryptInstall extends Migration
             $table->string('ext')->nullable();
             $table->unsignedBigInteger('size')->nullable();
             $table->unique(['able_type', 'able_id', 'field', 'index']);
+            $table->index(['able_type', 'able_id', 'field', 'index']);
         });
 
         Schema::create('media_encrypt_contents', function(Blueprint $table){
             $table->uuid('id')->primary();
+            $table->unsignedInteger('part');
+            $table->longText('data');
             $table->foreignUuid('media_encrypt_id')
                 ->references('id')
                 ->on('media_encrypts')
                 ->cascadeOnDelete();
-            $table->unsignedInteger('part');
-            $table->longText('data');
         });
     }
 

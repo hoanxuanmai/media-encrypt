@@ -25,6 +25,8 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
     protected $originContent;
     protected $needContent;
     protected $encryptedRows = [];
+    protected $decrypted = false;
+    protected $hasSetNeedContent = false;
 
     /**
      * @param $data
@@ -59,7 +61,7 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
      */
     public function setNeedContent($needContent): MediaEncryptInterface
     {
-        $this->decrypt();
+        $this->hasSetNeedContent = true;
         $this->needContent = $needContent;
         return $this;
     }
@@ -79,20 +81,23 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
      */
     function decrypt()
     {
-        if ($temp = $this->getNeedContent() ?? $this->getOriginContent()) {
-            return $temp;
-        }
-        if ($decryptString = $this->getRelationValue('contents')->implode('data')) {
-            try {
-                $originContent = MediaEncryptFacade::getEncrypt()->decrypt($decryptString);
-            } catch (\Exception $e) {
-                $originContent =  null;
+        if (! $this->decrypted) {
+            $originContent = null;
+            if ($decryptString = $this->getRelationValue('contents')->implode('data')) {
+                try {
+                    $originContent = MediaEncryptFacade::getEncrypt()->decrypt($decryptString);
+                } catch (\Exception $e) {
+                    $originContent =  null;
+                }
             }
             $this->originContent = $originContent;
-            $this->needContent = $originContent;
-            return $originContent;
         }
-        return null;
+
+        if ($this->hasSetNeedContent) {
+            return $this->needContent;
+        }
+
+        return $this->originContent;
     }
 
     function toUrl()
@@ -110,14 +115,15 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
     {
         static::saving(function(self $model) {
             $model->decrypt();
-            if ($model->getNeedContent() == $model->getOriginContent()) {
-                return false;
+
+            if ($model->hasSetNeedContent) {
+                $model->encryptContentBeforeSave();
+                if (!$model->encryptedRows) {
+                    $model->exists && $model->delete();
+                    return false;
+                }
             }
-            $model->encryptContentBeforeSave();
-            if (!$model->encryptedRows) {
-                $model->exists && $model->delete();
-                return false;
-            }
+
             if ($model->getKey() === null) {
                 $model->setAttribute($model->getKeyName(), Str::uuid()->toString());
             }
@@ -162,12 +168,17 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
         }
         $dataSave['rows'] = count($this->encryptedRows);
         $this->fill($dataSave);
+        $this->fireModelEvent('encryptContentAfter');
     }
 
+    public static function encryptContentAfter($callback)
+    {
+        static::registerModelEvent('encryptContentAfter', $callback);
+    }
 
     protected function saveContentAfterSaved()
     {
-        if ($this->encryptedRows) {
+        if ($this->encryptedRows && $this->needContent != $this->originContent) {
             $this->wasRecentlyCreated || $this->contents()->delete();
             $this->contents()->insert(
                 collect($this->encryptedRows)->mapWithKeys(function($data, $key) {

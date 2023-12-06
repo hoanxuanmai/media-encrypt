@@ -22,7 +22,7 @@ class MediaEncryptCast implements CastsAttributes
     public function get($model, $key, $value, $attributes)
     {
         return $model->getNeedEncryptByField($key) ?? $model->getEncryptedByField($key);
-//        return MediaEncryptFacade::decryptData($model, $key);
+
     }
 
     /**

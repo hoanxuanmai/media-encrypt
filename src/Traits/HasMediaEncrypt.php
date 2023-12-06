@@ -124,6 +124,42 @@ trait HasMediaEncrypt
     }
 
     /**
+     * Set a given attribute on the model.
+     *
+     * @param  string  $key
+     * @param  mixed  $value
+     * @return mixed
+     */
+    public function setAttribute($key, $value)
+    {
+        if (in_array($key, $this->mediaEncryptFields)) {
+            $caster = $this->resolveCasterClass($key);
+            $caster->set($this, $key, $value, $this->attributes);
+            return null;
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
+
+    /**
+     * Get an attribute from the model.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function getAttribute($key)
+    {
+        if (in_array($key, $this->mediaEncryptFields)) {
+            $caster = $this->resolveCasterClass($key);
+            return $caster->get($this, $key, null, $this->attributes);
+        }
+
+        return parent::getAttribute($key);
+    }
+
+
+    /**
      * @return array
      */
     public function getMediaEncryptFields(): array
@@ -158,7 +194,7 @@ trait HasMediaEncrypt
     public function getEncryptedByField($field)
     {
         $this->relationLoaded('media_encrypts') || $this->load('media_encrypts');
-        return $this->encryptedAttributes[$field] ?? null;
+        return clone ($this->encryptedAttributes[$field] ?? null);
     }
 
     /**
@@ -211,17 +247,17 @@ trait HasMediaEncrypt
     }
 
 
-    /**
-     * @return array
-     */
-    function getAttributes()
-    {
-        foreach ($this->getMediaEncryptFields() as $field) {
-            unset($this->classCastCache[$field]);
-            unset($this->attributes[$field]);
-        }
-        return parent::getAttributes();
-    }
+//    /**
+//     * @return array
+//     */
+//    function getAttributes()
+//    {
+//        foreach ($this->getMediaEncryptFields() as $field) {
+//            unset($this->classCastCache[$field]);
+//            unset($this->attributes[$field]);
+//        }
+//        return parent::getAttributes();
+//    }
 
     public function getFillable()
     {

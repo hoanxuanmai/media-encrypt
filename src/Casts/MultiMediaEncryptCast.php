@@ -37,15 +37,19 @@ class MultiMediaEncryptCast implements CastsAttributes
      */
     public function set($model, $key, $value, $attributes)
     {
+
         $existed = $model->getEncryptedByField($key) ?? collect();
 
         $needSave = collect($value)->mapWithKeys(function($row, $index) use ($model, $key, $value, $existed) {
             /** @var MediaEncrypt $instance */
             $instance = $existed->get($index);
-            $instance || $instance = $model->media_encrypts()->make([
-                'index' => $index,
-                'field' => $key
-            ]);
+
+            if (is_null($instance) || !($instance instanceof MediaEncrypt)) {
+                $instance = $model->media_encrypts()->make([
+                    'index' => $index,
+                    'field' => $key
+                ]);
+            }
             if (!$row instanceof MediaEncrypt){
                 $instance->setNeedContent($row);
             }

@@ -80,7 +80,7 @@ To use the **Media Encrypt** package in your Laravel project, you can refer to t
    
     $model->media_multi = [
         'file1' => request()->file('file1'),
-        'file2' => request()->file('file2'),
+        'file2' => request()->get('file2'),
     ];
     $model->save();
     ```
@@ -90,19 +90,23 @@ To use the **Media Encrypt** package in your Laravel project, you can refer to t
     $model = Demo::first();
    
    dump($model->baseData);
+   #@return: instance  HXM\MediaEncrypt\Models\MediaEncrypt
+   
+   dump($model->baseData->toAray());
     #@return: array:2 [
     #   'row' => 1
     #   'column' => 2
     #   ]
    
-    dump($model->media);
-    #@return: data:image/jpg;base64,/9j/4QA....
-    dump($model->media_multi);
+    dump($model->media->toUrl());
+    #@return: https://baseUrl/encrypt_media/4f03a151-14a9-4234...
+    dump($model->media_multi->decrypt());
     #@return: array:2 [
-    #   'file1' => data:image/jpg;base64,/9j/4QAYRXh.........
+    #   'file1' => https://baseUrl/encrypt_media/4f03a151-14a9-4234...
     #   'file2' => data:image/jpg;base64,/9j/4QAYRXh.........
     #   ]
     ```
+   * When accessing the property, you will receive an instance of `HXM\MediaEncrypt\Models\MediaEncrypt`
    * The `Media file` data will be encrypted and stored in the database, so after decryption, we will return it to the base64 code of the content.
    * Raw data such as text, array will be encrypted and returned unchanged.
 5. **Append**: If you want to `append` the decrypted data, simply add the fields you want to the `$appends` attribute of the `Model`:
@@ -117,12 +121,6 @@ The **Media Encrypt** package is distributed under the <a href="https://opensour
 
 ## Contact
 If you have any questions, please feel free to contact us via email at <a href="mailto:hoanxuanmai@gmail.com">hoanxuanmai@gmail.com</a>. We will try to respond as soon as possible.
-
-# Donations
-
-Any donations will be greatly appreciated and help ensure that the package is developed and maintained in the future.
-
-To donate, see the donation page on the website: [https://www.paypal.me/MaiXuanHoan](https://www.paypal.me/MaiXuanHoan).
 
 
 <h1 align="center"><a href="https://github.com/hoanxuanmai">HoanXuanMai</a></h1>
