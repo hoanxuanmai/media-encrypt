@@ -91,6 +91,7 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
                 }
             }
             $this->originContent = $originContent;
+            $this->decrypted = true;
         }
 
         if ($this->hasSetNeedContent) {
@@ -160,9 +161,12 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
         }
 
         if ($content !== '' && $content !== null) {
+
             $stringSave = MediaEncryptFacade::getEncrypt()->encrypt($content);
+
             $rows = str_split($stringSave, MediaEncryptFacade::getRowLength());
             $this->encryptedRows = $rows;
+
         } else {
             $this->encryptedRows = [];
         }
@@ -192,6 +196,8 @@ abstract class AbstractMediaEncryptModel extends Model implements MediaEncryptIn
                     ];
                 })->toArray()
             );
+            $this->hasSetNeedContent = false;
+            $this->encryptedRows = [];
         }
     }
 
