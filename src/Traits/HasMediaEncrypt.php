@@ -247,17 +247,17 @@ trait HasMediaEncrypt
     }
 
 
-//    /**
-//     * @return array
-//     */
-//    function getAttributes()
-//    {
-//        foreach ($this->getMediaEncryptFields() as $field) {
-//            unset($this->classCastCache[$field]);
-//            unset($this->attributes[$field]);
-//        }
-//        return parent::getAttributes();
-//    }
+    /**
+     * @return array
+     */
+    function getAttributes()
+    {
+        foreach ($this->getMediaEncryptFields() as $field) {
+            unset($this->classCastCache[$field]);
+            unset($this->attributes[$field]);
+        }
+        return parent::getAttributes();
+    }
 
     public function getFillable()
     {
